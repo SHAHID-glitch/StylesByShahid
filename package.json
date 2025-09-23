@@ -24,12 +24,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/stylesby-shahid.git"
+    "url": "git+https://github.com/SHAHID-glitch/StylesByShahid.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/stylesby-shahid/issues"
+    "url": "https://github.com/SHAHID-glitch/StylesByShahid/issues"
   },
-  "homepage": "https://github.com/yourusername/stylesby-shahid#readme",
+  "homepage": "https://github.com/SHAHID-glitch/StylesByShahid#readme",
   "dependencies": {
     "node-fetch": "^3.3.2"
   },
