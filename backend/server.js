@@ -1,0 +1,147 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const http = require('http');
+const socketIo = require('socket.io');
+require('dotenv').config();
+
+// Set fallback JWT secret if not found in .env
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'StylesByShahid-Super-Secret-Key-2025-Development-Mode';
+  console.log('⚠️  Using fallback JWT_SECRET');
+}
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const presentationRoutes = require('./routes/presentations');
+const templateRoutes = require('./routes/templates');
+const uploadRoutes = require('./routes/upload');
+const userRoutes = require('./routes/users');
+const collaborationRoutes = require('./routes/collaboration');
+
+// Import middleware
+const errorHandler = require('./middleware/errorHandler');
+const { authMiddleware } = require('./middleware/auth');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:8080",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Make io accessible to routes
+app.set('io', io);
+
+// Security middleware
+app.use(helmet());
+app.use(compression());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api', limiter);
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:8080",
+  credentials: true
+}));
+
+// Logging
+app.use(morgan('combined'));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Static files for uploads
+app.use('/uploads', express.static('uploads'));
+
+// Database connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stylesbyhahid', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ Connected to MongoDB'))
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err.message);
+  console.log('⚠️  Server will continue running without database connection');
+  console.log('💡 To use database features, please ensure MongoDB is running');
+});
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/presentations', authMiddleware, presentationRoutes);
+app.use('/api/templates', templateRoutes);
+app.use('/api/upload', authMiddleware, uploadRoutes);
+app.use('/api/users', authMiddleware, userRoutes);
+app.use('/api/presentations', authMiddleware, collaborationRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    message: 'StylesByShahid API is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Socket.io for real-time collaboration
+io.on('connection', (socket) => {
+  console.log('👤 User connected:', socket.id);
+
+  // Join presentation room
+  socket.on('join-presentation', (presentationId) => {
+    socket.join(presentationId);
+    console.log(`User ${socket.id} joined presentation ${presentationId}`);
+    socket.to(presentationId).emit('user-joined', socket.id);
+  });
+
+  // Handle real-time slide updates
+  socket.on('slide-update', (data) => {
+    socket.to(data.presentationId).emit('slide-updated', data);
+  });
+
+  // Handle cursor movements for collaboration
+  socket.on('cursor-move', (data) => {
+    socket.to(data.presentationId).emit('cursor-moved', {
+      userId: socket.id,
+      position: data.position
+    });
+  });
+
+  // Handle comments
+  socket.on('new-comment', (data) => {
+    socket.to(data.presentationId).emit('comment-added', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('👤 User disconnected:', socket.id);
+  });
+});
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(`🚀 StylesByShahid Backend running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+module.exports = { app, io };

@@ -1,0 +1,39 @@
+{
+  "name": "stylesby-shahid",
+  "version": "1.0.0",
+  "description": "A world-class presentation creation platform with beautiful glassmorphism design and powerful backend features",
+  "main": "index.html",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "install-all": "npm install && cd backend && npm install",
+    "backend": "cd backend && node server.js",
+    "serve": "npx http-server -p 8080"
+  },
+  "keywords": [
+    "presentation",
+    "design",
+    "glassmorphism",
+    "modern",
+    "web-app",
+    "nodejs",
+    "mongodb",
+    "jwt"
+  ],
+  "author": "StylesByShahid",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/stylesby-shahid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/stylesby-shahid/issues"
+  },
+  "homepage": "https://github.com/yourusername/stylesby-shahid#readme",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
