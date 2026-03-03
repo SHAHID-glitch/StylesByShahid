@@ -25,6 +25,7 @@ const templateRoutes = require('./routes/templates');
 const uploadRoutes = require('./routes/upload');
 const userRoutes = require('./routes/users');
 const collaborationRoutes = require('./routes/collaboration');
+const pptGeneratorRoutes = require('./routes/ppt-generator');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -112,11 +113,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stylesbyh
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/presentations', authMiddleware, presentationRoutes);
+app.use('/api/presentations', presentationRoutes);
+app.use('/api/ppt-generator', pptGeneratorRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/upload', authMiddleware, uploadRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/presentations', authMiddleware, collaborationRoutes);
+app.use('/api/collaboration', authMiddleware, collaborationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

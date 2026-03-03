@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const DatabaseAdapter = require('../models/DatabaseAdapter');
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -19,15 +20,22 @@ const authMiddleware = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from database
-    const user = await User.findById(decoded.id).select('-password');
+    // Get user from database adapter (handles both MongoDB and demo DB)
+    const user = await DatabaseAdapter.findUserById(decoded.id);
     
     if (!user) {
       return res.status(401).json({ message: 'User not found, authorization denied' });
     }
 
     // Add user to request object
-    req.user = user;
+    req.user = {
+      id: user._id || user.id,
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role
+    };
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
