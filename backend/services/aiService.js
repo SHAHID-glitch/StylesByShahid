@@ -98,7 +98,7 @@ class AIService {
   }
 
   buildPrompt(topic, numSlides, tone) {
-    return `Generate a complete ${numSlides}-slide presentation plan.
+    return `Generate a comprehensive ${numSlides}-slide presentation plan with detailed content.
 
 Topic: "${topic}"
 Requested tone: "${tone}"
@@ -106,19 +106,27 @@ Requested tone: "${tone}"
 Requirements:
 - Return ONLY valid JSON object, no markdown or extra text
 - Auto-decide the best theme from: default, corporate, creative
-- Each slide must have: "title" (string) and "points" (array of 3-5 bullet points)
-- Keep bullet points concise (max 10 words each)
-- Make it engaging and informative
+- Each slide MUST include:
+  * "title": Main slide heading (max 8 words)
+  * "subtitle": Supporting headline (optional, max 12 words)
+  * "description": 2-3 sentences of detailed explanation (40-80 words)
+  * "keyPoints": Array of 3-4 concise bullet points (5-8 words each)
+  * "imageSuggestion": Description of what image would fit (e.g., "diagram", "chart", "photo of team", "infographic")
+- Make content informative, well-explained, and professional
+- Ensure proper flow between slides
 
 Return exactly this JSON format:
 {
-  "title": "Presentation Title",
+  "title": "Complete Presentation Title",
   "tone": "Professional",
   "theme": "corporate",
   "slides": [
     {
-      "title": "Slide Title",
-      "points": ["Point 1", "Point 2", "Point 3", "Point 4"]
+      "title": "Main Heading",
+      "subtitle": "Supporting Headline",
+      "description": "Detailed explanation paragraph that provides context and valuable information to the audience. This should be 2-3 complete sentences.",
+      "keyPoints": ["First key point", "Second key point", "Third key point"],
+      "imageSuggestion": "diagram showing process flow"
     }
   ]
 }`;
@@ -180,70 +188,79 @@ Return exactly this JSON format:
    */
   generateDemoPresentation(topic, numSlides, tone) {
     const slides = [];
-    
-    // Title slide
-    slides.push({
-      title: `${topic}`,
-      points: ['A Comprehensive Overview', `${new Date().getFullYear()}`, 'Demo Mode', 'StylesByShahid']
-    });
 
-    // Content slides
+    // Content slide templates with detailed information
     const contentTemplates = [
       {
-        points: [
-          'Definition and core concepts',
-          'Historical context and evolution',
-          'Key terminology',
-          'Common misconceptions'
-        ]
+        title: 'Introduction',
+        subtitle: 'Understanding the Fundamentals',
+        description: 'This section provides a comprehensive overview of the key concepts and foundational elements. We will explore the background, context, and importance of this topic in today\'s landscape.',
+        keyPoints: ['Core concepts overview', 'Historical context', 'Current relevance'],
+        imageSuggestion: 'conceptual diagram or introduction visual'
       },
       {
-        points: [
-          'Major applications',
-          'Real-world examples',
-          'Industry impact',
-          'Current trends'
-        ]
+        title: 'Key Components',
+        subtitle: 'Essential Elements and Features',
+        description: 'Understanding the main components is crucial for grasping the full picture. These elements work together to create a cohesive framework that drives success and innovation.',
+        keyPoints: ['Primary features', 'Core functionalities', 'Integration aspects'],
+        imageSuggestion: 'infographic showing components'
       },
       {
-        points: [
-          'Advantages and benefits',
-          'Increased efficiency',
-          'Cost savings',
-          'Improved outcomes'
-        ]
+        title: 'Applications',
+        subtitle: 'Real-World Use Cases',
+        description: 'Practical applications demonstrate the versatility and impact across various industries. From healthcare to finance, these implementations show tangible benefits and transformative potential.',
+        keyPoints: ['Industry applications', 'Success stories', 'Implementation examples'],
+        imageSuggestion: 'collage of industry applications'
       },
       {
-        points: [
-          'Challenges and limitations',
-          'Technical obstacles',
-          'Ethical considerations',
-          'Future improvements needed'
-        ]
+        title: 'Benefits',
+        subtitle: 'Value and Impact',
+        description: 'The advantages extend beyond immediate gains, offering long-term strategic value. Organizations experience improved efficiency, cost savings, and enhanced outcomes through proper implementation.',
+        keyPoints: ['Increased efficiency', 'Cost reduction', 'Better outcomes'],
+        imageSuggestion: 'chart showing growth or improvement'
+      },
+      {
+        title: 'Challenges',
+        subtitle: 'Overcoming Obstacles',
+        description: 'While the potential is significant, implementation comes with challenges that require careful consideration. Understanding these obstacles helps in developing effective mitigation strategies.',
+        keyPoints: ['Common roadblocks', 'Technical hurdles', 'Solution approaches'],
+        imageSuggestion: 'problem-solution visual'
+      },
+      {
+        title: 'Future Outlook',
+        subtitle: 'Trends and Opportunities',
+        description: 'The landscape continues to evolve with emerging technologies and innovative approaches. Staying ahead requires awareness of upcoming trends and strategic positioning for future opportunities.',
+        keyPoints: ['Emerging trends', 'Growth opportunities', 'Innovation roadmap'],
+        imageSuggestion: 'futuristic or trend visualization'
+      },
+      {
+        title: 'Best Practices',
+        subtitle: 'Proven Strategies for Success',
+        description: 'Learning from successful implementations provides valuable insights for optimization. These proven methodologies ensure smoother deployment and better results across various scenarios.',
+        keyPoints: ['Strategic approach', 'Quality standards', 'Performance optimization'],
+        imageSuggestion: 'checklist or best practice framework'
+      },
+      {
+        title: 'Conclusion',
+        subtitle: 'Key Takeaways and Next Steps',
+        description: 'This presentation has covered essential aspects from fundamentals to implementation. Moving forward, focus on applying these insights to achieve measurable results and continuous improvement.',
+        keyPoints: ['Summary of key points', 'Action items', 'Recommended next steps'],
+        imageSuggestion: 'summary graphic or call-to-action visual'
       }
     ];
 
-    for (let i = 1; i < Math.min(numSlides, contentTemplates.length + 1); i++) {
+    for (let i = 0; i < numSlides; i++) {
+      const template = contentTemplates[i % contentTemplates.length];
       slides.push({
-        title: `${topic} - Part ${i}`,
-        points: contentTemplates[i - 1]?.points || contentTemplates[0].points
+        title: template.title,
+        subtitle: template.subtitle,
+        description: template.description,
+        keyPoints: template.keyPoints,
+        imageSuggestion: template.imageSuggestion
       });
     }
 
-    // Conclusion slide
-    if (slides.length < numSlides) {
-      slides.push({
-        title: 'Conclusion',
-        points: [
-          'Key takeaways',
-          'Impact and significance',
-          'Future opportunities',
-          'Questions?'
-        ]
-      });
-    }
-
-    return slides.slice(0, numSlides);
+    return slides;
   }
 }
 

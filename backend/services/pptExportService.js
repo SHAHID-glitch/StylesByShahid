@@ -130,44 +130,173 @@ class PPTExportService {
       fill: { color: this.theme.titleColor }
     });
 
+    // Slide number badge
+    slide.addShape(this.prs.ShapeType.rect, {
+      x: 0.3,
+      y: 0.35,
+      w: 0.6,
+      h: 0.6,
+      fill: { color: this.theme.accentColor }
+    });
+
+    slide.addText((index + 1).toString(), {
+      x: 0.3,
+      y: 0.35,
+      w: 0.6,
+      h: 0.6,
+      fontSize: 24,
+      bold: true,
+      color: 'FFFFFF',
+      align: 'center',
+      valign: 'middle',
+      fontFace: 'Arial'
+    });
+
     // Title
-    slide.addText((index + 1) + '. ' + slideData.title, {
-      x: 0.5,
+    slide.addText(slideData.title, {
+      x: 1.1,
       y: 0.4,
-      w: 9,
-      h: 0.8,
+      w: 5,
+      h: 0.7,
       fontSize: 32,
       bold: true,
       color: this.theme.titleColor,
       fontFace: 'Arial'
     });
 
-    // Content bullets
-    let yPos = 1.5;
-    const bulletPoints = slideData.points || [];
-
-    bulletPoints.forEach((point, i) => {
-      slide.addText(point, {
-        x: 1,
-        y: yPos,
-        w: 8,
-        h: 0.6,
+    // Subtitle (if present)
+    if (slideData.subtitle) {
+      slide.addText(slideData.subtitle, {
+        x: 1.1,
+        y: 1.0,
+        w: 5,
+        h: 0.4,
         fontSize: 16,
+        italic: true,
+        color: this.theme.accentColor,
+        fontFace: 'Arial'
+      });
+    }
+
+    // Image placeholder on the right side
+    const imgX = 6.5;
+    const imgY = 1.5;
+    const imgW = 3;
+    const imgH = 2.5;
+
+    // Image placeholder box with slight shadow effect
+    slide.addShape(this.prs.ShapeType.rect, {
+      x: imgX + 0.05,
+      y: imgY + 0.05,
+      w: imgW,
+      h: imgH,
+      fill: { color: 'CCCCCC' }
+    });
+
+    slide.addShape(this.prs.ShapeType.rect, {
+      x: imgX,
+      y: imgY,
+      w: imgW,
+      h: imgH,
+      fill: { color: 'F8F8F8' },
+      line: { color: this.theme.accentColor, width: 2 }
+    });
+
+    // Image icon/placeholder text
+    slide.addText('🖼️\n\nImage Placeholder', {
+      x: imgX,
+      y: imgY + 0.8,
+      w: imgW,
+      h: 1,
+      fontSize: 14,
+      color: '999999',
+      align: 'center',
+      valign: 'middle',
+      fontFace: 'Arial'
+    });
+
+    // Image suggestion caption
+    if (slideData.imageSuggestion) {
+      slide.addText(`Suggest: ${slideData.imageSuggestion}`, {
+        x: imgX,
+        y: imgY + imgH + 0.1,
+        w: imgW,
+        h: 0.3,
+        fontSize: 9,
+        italic: true,
+        color: '888888',
+        align: 'center',
+        fontFace: 'Arial'
+      });
+    }
+
+    // Description text (detailed explanation)
+    const descStartY = slideData.subtitle ? 1.6 : 1.5;
+    if (slideData.description) {
+      slide.addText(slideData.description, {
+        x: 0.5,
+        y: descStartY,
+        w: 5.5,
+        h: 1.2,
+        fontSize: 13,
         color: this.theme.bodyColor,
         fontFace: 'Arial',
-        bullet: true
+        align: 'left',
+        valign: 'top'
       });
-      yPos += 0.8;
+    }
+
+    // Key Points section
+    const keyPointsStartY = descStartY + 1.3;
+    
+    slide.addText('Key Points:', {
+      x: 0.5,
+      y: keyPointsStartY,
+      w: 5.5,
+      h: 0.4,
+      fontSize: 16,
+      bold: true,
+      color: this.theme.titleColor,
+      fontFace: 'Arial'
+    });
+
+    // Key points bullets
+    let yPos = keyPointsStartY + 0.5;
+    const keyPoints = slideData.keyPoints || slideData.points || [];
+
+    keyPoints.slice(0, 4).forEach((point, i) => {
+      // Bullet point with custom styling
+      slide.addText('▸', {
+        x: 0.7,
+        y: yPos,
+        w: 0.3,
+        h: 0.5,
+        fontSize: 16,
+        color: this.theme.accentColor,
+        fontFace: 'Arial',
+        bold: true
+      });
+
+      slide.addText(point, {
+        x: 1.1,
+        y: yPos,
+        w: 5,
+        h: 0.5,
+        fontSize: 14,
+        color: this.theme.bodyColor,
+        fontFace: 'Arial'
+      });
+      yPos += 0.6;
     });
 
     // Footer
-    slide.addText(`StylesByShahid | Page ${index + 2}`, {
+    slide.addText(`StylesByShahid | Slide ${index + 2}`, {
       x: 0.5,
       y: 7,
       w: 9,
       h: 0.4,
       fontSize: 10,
-      color: '#CCCCCC',
+      color: '#AAAAAA',
       align: 'right',
       fontFace: 'Arial'
     });
