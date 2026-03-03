@@ -39,8 +39,18 @@ const io = socketIo(server, {
 // Make io accessible to routes
 app.set('io', io);
 
-// Security middleware
-app.use(helmet());
+// Security middleware with custom CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "http://localhost:5000", "ws://localhost:5000", "https://api.github.com"]
+    }
+  }
+}));
 app.use(compression());
 
 // Rate limiting
@@ -59,12 +69,20 @@ app.use(cors({
 // Logging
 app.use(morgan('combined'));
 
+// Favicon handler
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files for uploads
 app.use('/uploads', express.static('uploads'));
+
+// Serve frontend static files from parent directory
+app.use(express.static('../'));
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stylesbyhahid', {
@@ -131,6 +149,11 @@ io.on('connection', (socket) => {
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+// Serve index.html for any non-API routes (SPA routing)
+app.get('*', (req, res) => {
+  res.sendFile('../index.html', { root: __dirname });
+});
 
 // 404 handler
 app.use('*', (req, res) => {
