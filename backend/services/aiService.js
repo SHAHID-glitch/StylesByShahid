@@ -6,14 +6,30 @@ const { OpenAI } = require('openai');
 
 class AIService {
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.client = new OpenAI({ apiKey });
+    const groqApiKey = process.env.GROQ_API_KEY;
+    const openAiApiKey = process.env.OPENAI_API_KEY;
+
+    if (groqApiKey) {
+      this.client = new OpenAI({
+        apiKey: groqApiKey,
+        baseURL: 'https://api.groq.com/openai/v1'
+      });
+      this.model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+      this.provider = 'groq';
       this.isAvailable = true;
-    } else {
-      console.log('⚠️  OpenAI API key not found - using demo mode');
-      this.isAvailable = false;
+      return;
     }
+
+    if (openAiApiKey) {
+      this.client = new OpenAI({ apiKey: openAiApiKey });
+      this.model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+      this.provider = 'openai';
+      this.isAvailable = true;
+      return;
+    }
+
+    console.log('⚠️  No GROQ_API_KEY or OPENAI_API_KEY found - using demo mode');
+    this.isAvailable = false;
   }
 
   /**
@@ -25,51 +41,97 @@ class AIService {
    * @returns {Array} Array of slide objects
    */
   async generatePresentation(options) {
+    const plan = await this.generatePresentationPlan(options);
+    return plan.slides;
+  }
+
+  async generatePresentationPlan(options) {
     const { topic, numSlides = 5, tone = 'Professional' } = options;
 
     if (!this.isAvailable) {
-      return this.generateDemoPresentation(topic, numSlides, tone);
+      return {
+        title: topic,
+        tone,
+        theme: 'default',
+        slides: this.generateDemoPresentation(topic, numSlides, tone)
+      };
     }
 
     try {
       const prompt = this.buildPrompt(topic, numSlides, tone);
       const response = await this.callOpenAI(prompt);
-      const slides = this.parseAIResponse(response);
-      
-      return slides.length > 0 ? slides : this.generateDemoPresentation(topic, numSlides, tone);
+      const parsed = this.parseAIResponse(response);
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return {
+          title: topic,
+          tone,
+          theme: 'default',
+          slides: parsed
+        };
+      }
+
+      if (parsed && Array.isArray(parsed.slides) && parsed.slides.length > 0) {
+        return {
+          title: parsed.title || topic,
+          tone: parsed.tone || tone,
+          theme: this.normalizeTheme(parsed.theme),
+          slides: parsed.slides
+        };
+      }
+
+      return {
+        title: topic,
+        tone,
+        theme: 'default',
+        slides: this.generateDemoPresentation(topic, numSlides, tone)
+      };
     } catch (error) {
       console.error('AI Generation error:', error);
-      return this.generateDemoPresentation(topic, numSlides, tone);
+      return {
+        title: topic,
+        tone,
+        theme: 'default',
+        slides: this.generateDemoPresentation(topic, numSlides, tone)
+      };
     }
   }
 
   buildPrompt(topic, numSlides, tone) {
-    return `Generate a ${numSlides}-slide presentation on the topic: "${topic}"
+    return `Generate a complete ${numSlides}-slide presentation plan.
+
+Topic: "${topic}"
+Requested tone: "${tone}"
 
 Requirements:
-- Tone: ${tone}
-- Return ONLY valid JSON array, no markdown or extra text
-- Each slide must have: "title" (string) and "points" (array of 3-4 bullet points)
+- Return ONLY valid JSON object, no markdown or extra text
+- Auto-decide the best theme from: default, corporate, creative
+- Each slide must have: "title" (string) and "points" (array of 3-5 bullet points)
 - Keep bullet points concise (max 10 words each)
 - Make it engaging and informative
 
 Return exactly this JSON format:
-[
-  {
-    "title": "Slide Title",
-    "points": ["Point 1", "Point 2", "Point 3", "Point 4"]
-  }
-]`;
+{
+  "title": "Presentation Title",
+  "tone": "Professional",
+  "theme": "corporate",
+  "slides": [
+    {
+      "title": "Slide Title",
+      "points": ["Point 1", "Point 2", "Point 3", "Point 4"]
+    }
+  ]
+}`;
   }
 
   async callOpenAI(prompt) {
     try {
       const response = await this.client.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: this.model,
         messages: [
           {
             role: 'system',
-            content: 'You are a professional presentation writer. Always return valid JSON and nothing else.'
+            content: 'You are a professional presentation designer and writer. Always return valid JSON and nothing else.'
           },
           {
             role: 'user',
@@ -89,7 +151,11 @@ Return exactly this JSON format:
 
   parseAIResponse(response) {
     try {
-      // Extract JSON from the response
+      const objectMatch = response.match(/\{[\s\S]*\}/);
+      if (objectMatch) {
+        return JSON.parse(objectMatch[0]);
+      }
+
       const jsonMatch = response.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
@@ -99,6 +165,14 @@ Return exactly this JSON format:
       console.error('Error parsing AI response:', error);
       return [];
     }
+  }
+
+  normalizeTheme(theme) {
+    const safeTheme = (theme || '').toString().toLowerCase();
+    if (safeTheme === 'corporate' || safeTheme === 'creative' || safeTheme === 'default') {
+      return safeTheme;
+    }
+    return 'default';
   }
 
   /**

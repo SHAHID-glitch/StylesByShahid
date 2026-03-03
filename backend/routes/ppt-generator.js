@@ -15,7 +15,7 @@ const DatabaseAdapter = require('../models/DatabaseAdapter');
  */
 router.post('/generate', async (req, res) => {
   try {
-    const { topic, numSlides = 5, tone = 'Professional', template = 'default' } = req.body;
+    const { topic, numSlides = 5, tone = 'Professional' } = req.body;
 
     // Validate input
     if (!topic) {
@@ -28,8 +28,7 @@ router.post('/generate', async (req, res) => {
 
     console.log(`🤖 Generating presentation: "${topic}" (${numSlides} slides, ${tone} tone)`);
 
-    // Generate slides using AI
-    const slides = await aiService.generatePresentation({
+    const plan = await aiService.generatePresentationPlan({
       topic,
       numSlides,
       tone
@@ -38,11 +37,13 @@ router.post('/generate', async (req, res) => {
     res.status(200).json({
       message: 'Presentation generated successfully',
       presentation: {
-        title: topic,
-        slides: slides,
-        template: template,
+        title: plan.title,
+        slides: plan.slides,
+        template: plan.theme,
+        tone: plan.tone,
         generatedAt: new Date(),
-        slideCount: slides.length
+        slideCount: plan.slides.length,
+        aiDecidedTheme: true
       }
     });
 
@@ -58,7 +59,7 @@ router.post('/generate', async (req, res) => {
  */
 router.post('/generate-and-export', async (req, res) => {
   try {
-    const { topic, numSlides = 5, tone = 'Professional', template = 'default' } = req.body;
+    const { topic, numSlides = 5, tone = 'Professional' } = req.body;
 
     if (!topic) {
       return res.status(400).json({ message: 'Topic is required' });
@@ -66,21 +67,20 @@ router.post('/generate-and-export', async (req, res) => {
 
     console.log(`📊 Generating and exporting: "${topic}"`);
 
-    // Generate slides
-    const slides = await aiService.generatePresentation({
+    const plan = await aiService.generatePresentationPlan({
       topic,
       numSlides,
       tone
     });
 
     // Create presentation
-    const prs = await pptExportService.createPresentation(topic, slides, template);
+    const prs = await pptExportService.createPresentation(plan.title, plan.slides, plan.theme);
 
     // Export to buffer
     const buffer = await pptExportService.getDownloadBuffer(prs);
 
     // Send as downloadable file
-    const filename = `${topic.replace(/\s+/g, '_')}_${Date.now()}.pptx`;
+    const filename = `${plan.title.replace(/\s+/g, '_')}_${Date.now()}.pptx`;
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

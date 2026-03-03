@@ -762,7 +762,7 @@
         <div class="container">
             <h2>Ready to Create Amazing Presentations?</h2>
             <p>Join thousands of users who are transforming their presentation game with StylesByShahid.</p>
-            <button class="btn">Get Started for Free</button>
+            <button class="btn" onclick="showAIPresentationModal()">Get Started for Free</button>
         </div>
     </section>
 
@@ -839,7 +839,17 @@
 
                 try {
                     const response = await fetch(url, config);
-                    const data = await response.json();
+                    const rawText = await response.text();
+                    let data = {};
+
+                    try {
+                        data = rawText ? JSON.parse(rawText) : {};
+                    } catch (parseError) {
+                        if (!response.ok) {
+                            throw new Error(`Request failed with status ${response.status}`);
+                        }
+                        throw parseError;
+                    }
                     
                     if (!response.ok) {
                         const errorMessage = data.details || data.message || 'API request failed';
@@ -897,6 +907,39 @@
             // Health check
             async healthCheck() {
                 return this.request('/health');
+            },
+
+            async generateAIPresentation(topic, numSlides) {
+                return this.request('/ppt-generator/generate', {
+                    method: 'POST',
+                    body: JSON.stringify({ topic, numSlides })
+                });
+            },
+
+            async exportAIPresentation(topic, numSlides) {
+                const url = `${API_BASE_URL}/ppt-generator/generate-and-export`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authState.token && { 'Authorization': `Bearer ${authState.token}` })
+                    },
+                    body: JSON.stringify({ topic, numSlides })
+                });
+
+                if (!response.ok) {
+                    const rawText = await response.text();
+                    let errorMessage = `Export failed with status ${response.status}`;
+                    try {
+                        const errorData = rawText ? JSON.parse(rawText) : {};
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (parseError) {
+                        errorMessage = rawText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                return response.blob();
             }
         };
 
@@ -1113,6 +1156,67 @@
             }
         }
 
+        function showAIPresentationModal() {
+            const content = `
+                <form id="ai-ppt-form">
+                    <div class="form-group">
+                        <label for="ai-topic">Presentation Topic:</label>
+                        <input type="text" id="ai-topic" name="topic" required placeholder="e.g., AI in Healthcare">
+                    </div>
+                    <div class="form-group">
+                        <label for="ai-slides">Number of Slides:</label>
+                        <select id="ai-slides" name="numSlides" required>
+                            <option value="4">4 Slides</option>
+                            <option value="6" selected>6 Slides</option>
+                            <option value="8">8 Slides</option>
+                            <option value="10">10 Slides</option>
+                            <option value="12">12 Slides</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Generate Full AI PPT</button>
+                    </div>
+                    <div id="ai-ppt-error" class="error-message"></div>
+                </form>
+            `;
+
+            const modal = createModal('AI PPT Maker', content);
+
+            document.getElementById('ai-ppt-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const topic = formData.get('topic');
+                const numSlides = Number(formData.get('numSlides'));
+                const submitButton = e.target.querySelector('button[type="submit"]');
+                const errorNode = document.getElementById('ai-ppt-error');
+
+                errorNode.textContent = '';
+                submitButton.disabled = true;
+                submitButton.textContent = 'Generating...';
+
+                try {
+                    const preview = await api.generateAIPresentation(topic, numSlides);
+                    const blob = await api.exportAIPresentation(topic, numSlides);
+                    const fileUrl = window.URL.createObjectURL(blob);
+                    const fileLink = document.createElement('a');
+                    fileLink.href = fileUrl;
+                    fileLink.download = `${(preview.presentation?.title || topic).replace(/\s+/g, '_')}.pptx`;
+                    document.body.appendChild(fileLink);
+                    fileLink.click();
+                    fileLink.remove();
+                    window.URL.revokeObjectURL(fileUrl);
+
+                    modal.remove();
+                    showSuccess(`AI presentation ready! Theme: ${preview.presentation?.template || 'default'}`);
+                } catch (error) {
+                    errorNode.textContent = error.message || 'Failed to generate presentation';
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Generate Full AI PPT';
+                }
+            };
+        }
+
         // UI Update functions
         function updateUIForAuthState() {
             const authButtons = document.querySelector('.auth-buttons');
@@ -1265,11 +1369,7 @@
             getStartedButtons.forEach(button => {
                 if (button.textContent.includes('Get Started') || button.textContent.includes('Started')) {
                     button.onclick = () => {
-                        if (authState.isAuthenticated) {
-                            showTemplateGallery();
-                        } else {
-                            showSignUpModal();
-                        }
+                        showAIPresentationModal();
                     };
                 }
             });
