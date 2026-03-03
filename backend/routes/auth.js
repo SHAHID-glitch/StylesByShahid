@@ -1,13 +1,14 @@
 const express = require('express');
 const Joi = require('joi');
 const User = require('../models/User');
+const DatabaseAdapter = require('../models/DatabaseAdapter');
 const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Validation schemas
 const registerSchema = Joi.object({
-  username: Joi.string().alphanum().min(3).max(30).required(),
+  username: Joi.string().min(3).max(30).required(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
   firstName: Joi.string().max(50).required(),
@@ -35,19 +36,8 @@ router.post('/register', async (req, res) => {
 
     const { username, email, password, firstName, lastName } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
-    });
-
-    if (existingUser) {
-      return res.status(400).json({
-        message: existingUser.email === email ? 'Email already registered' : 'Username already taken'
-      });
-    }
-
     // Create new user
-    const user = new User({
+    const user = await DatabaseAdapter.createUser({
       username,
       email,
       password,
@@ -55,16 +45,14 @@ router.post('/register', async (req, res) => {
       lastName
     });
 
-    await user.save();
-
     // Generate token
-    const token = user.generateAuthToken();
+    const token = DatabaseAdapter.generateAuthToken(user._id || user.id);
 
     res.status(201).json({
       message: 'User registered successfully',
       token,
       user: {
-        id: user._id,
+        id: user._id || user.id,
         username: user.username,
         email: user.email,
         firstName: user.firstName,
@@ -75,6 +63,9 @@ router.post('/register', async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
+    if (error.status) {
+      return res.status(error.status).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server error during registration' });
   }
 });
@@ -96,28 +87,25 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await DatabaseAdapter.findUserByEmail(email);
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await DatabaseAdapter.comparePassword(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Update last login
-    await user.updateLastLogin();
-
     // Generate token
-    const token = user.generateAuthToken();
+    const token = DatabaseAdapter.generateAuthToken(user._id || user.id);
 
     res.json({
       message: 'Login successful',
       token,
       user: {
-        id: user._id,
+        id: user._id || user.id,
         username: user.username,
         email: user.email,
         firstName: user.firstName,

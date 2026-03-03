@@ -15,6 +15,9 @@ if (!process.env.JWT_SECRET) {
   console.log('⚠️  Using fallback JWT_SECRET');
 }
 
+// Import database adapter
+const DatabaseAdapter = require('./models/DatabaseAdapter');
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const presentationRoutes = require('./routes/presentations');
@@ -39,12 +42,16 @@ const io = socketIo(server, {
 // Make io accessible to routes
 app.set('io', io);
 
+// Trust proxy for rate limiter
+app.set('trust proxy', 1);
+
 // Security middleware with custom CSP
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "http://localhost:5000", "ws://localhost:5000", "https://api.github.com"]
@@ -56,7 +63,8 @@ app.use(compression());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  skip: (req, res) => process.env.NODE_ENV === 'development'
 });
 app.use('/api', limiter);
 
@@ -88,12 +96,18 @@ app.use(express.static('../'));
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stylesbyhahid', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 3000,
+  connectTimeoutMS: 3000
 })
-.then(() => console.log('✅ Connected to MongoDB'))
+.then(() => {
+  console.log('✅ Connected to MongoDB');
+  DatabaseAdapter.init();
+})
 .catch(err => {
   console.error('❌ MongoDB connection error:', err.message);
   console.log('⚠️  Server will continue running without database connection');
-  console.log('💡 To use database features, please ensure MongoDB is running');
+  console.log('📝 Using demo mode - authentication is mocked');
+  DatabaseAdapter.init();
 });
 
 // Routes
