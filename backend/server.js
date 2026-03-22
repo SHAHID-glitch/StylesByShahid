@@ -31,12 +31,18 @@ function loadOptionalRouter(modulePath, routeLabel) {
   try {
     return require(modulePath);
   } catch (error) {
-    console.error(`❌ Failed to load route ${routeLabel}:`, error.message);
+    console.error(`❌ Failed to load route ${routeLabel}: ${error.message}`);
+    console.error(`   Module path: ${modulePath}`);
+    if (error.stack) {
+      const stackLines = error.stack.split('\n').slice(0, 3).join('\n   ');
+      console.error(`   Stack trace:\n   ${stackLines}`);
+    }
 
     const router = express.Router();
     router.use((req, res) => {
       res.status(503).json({
-        message: `${routeLabel} route is temporarily unavailable`
+        message: `${routeLabel} route is temporarily unavailable`,
+        error: error.message
       });
     });
 
