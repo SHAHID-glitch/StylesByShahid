@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: stylesby-shahid-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install && cd backend && npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: mongodb
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        value: https://stylesby-shahid.onrender.com
+
+databases:
+  - name: mongodb
+    plan: free
+    dbrole: admin
+    dbname: stylesbyhahid_db
