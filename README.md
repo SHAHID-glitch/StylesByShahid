@@ -1,3 +1,13 @@
+---
+title: StylesByShahid
+emoji: 🎨
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🎨 StylesByShahid - Modern Presentation Platform
 
 > A world-class presentation creation platform with beautiful glassmorphism design and powerful backend features.
@@ -193,6 +203,44 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you have any questions or need help, please:
 - Open an issue on GitHub
 - Contact us at sahidmalik9368@gmail.com
+
+## 🤗 Deploy To Hugging Face Space (HF CLI)
+
+This repository is configured for Hugging Face Docker Spaces with the root Dockerfile.
+
+1. Install and login to HF CLI
+
+```bash
+pip install -U "huggingface_hub[cli]"
+hf auth login
+```
+
+2. Create a Docker Space
+
+```bash
+# Change this to the Space name you want
+SPACE_NAME="stylesbyshahid"
+
+hf repo create "$SPACE_NAME" --type space --space_sdk docker
+```
+
+3. Push this code to the Space
+
+```bash
+SPACE_NAME="stylesbyshahid"
+HF_USER="<your-hf-username>"
+
+git remote add hf "https://huggingface.co/spaces/$HF_USER/$SPACE_NAME"
+git push hf main
+```
+
+4. Add Space variables/secrets in Space Settings
+
+- `JWT_SECRET`
+- `MONGODB_URI` (optional; app can still boot in demo mode)
+- `CLIENT_URL` (optional; set to your Space URL for strict CORS)
+
+Hugging Face will build and start the container on port `7860`.
 ---
 
 <div align="center">
