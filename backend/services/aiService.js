@@ -2,7 +2,13 @@
  * AI Service - Generates presentation content using OpenAI
  */
 
+const path = require('path');
+const dotenv = require('dotenv');
 const { OpenAI } = require('openai');
+
+// Support both backend/.env and project-root .env.
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 class AIService {
   constructor() {
@@ -64,20 +70,22 @@ class AIService {
       const parsed = this.parseAIResponse(response);
 
       if (Array.isArray(parsed) && parsed.length > 0) {
+        const normalizedSlides = this.enforceOutlineOnSlides(parsed, sanitizedSlideTitles, topic);
         return {
           title: topic,
           tone,
           theme: 'default',
-          slides: parsed
+          slides: normalizedSlides
         };
       }
 
       if (parsed && Array.isArray(parsed.slides) && parsed.slides.length > 0) {
+        const normalizedSlides = this.enforceOutlineOnSlides(parsed.slides, sanitizedSlideTitles, topic);
         return {
           title: parsed.title || topic,
           tone: parsed.tone || tone,
           theme: this.normalizeTheme(parsed.theme),
-          slides: parsed.slides
+          slides: normalizedSlides
         };
       }
 
@@ -160,6 +168,8 @@ ${outlineInstruction}
 Requirements:
 - Return ONLY valid JSON object, no markdown or extra text
 - Auto-decide the best theme from: default, corporate, creative
+- Every slide's content must be relevant to the main topic and prompt context
+- If user-provided titles exist, each slide must explain that title in relation to the topic
 - Each slide MUST include:
   * "title": Main slide heading (max 8 words)
   * "subtitle": Supporting headline (optional, max 12 words)
@@ -271,6 +281,35 @@ Return exactly this JSON format:
       .slice(0, numSlides);
 
     return normalizedTitles;
+  }
+
+  enforceOutlineOnSlides(slides, slideTitles, topic) {
+    if (!Array.isArray(slides) || slides.length === 0) {
+      return [];
+    }
+
+    if (!Array.isArray(slideTitles) || slideTitles.length === 0) {
+      return slides;
+    }
+
+    return slideTitles.map((fixedTitle, index) => {
+      const existing = slides[index] || {};
+      const fallbackDescription = `This slide explains ${fixedTitle} in the context of ${topic}. It highlights practical meaning, current relevance, and how this section connects to the overall presentation narrative.`;
+
+      return {
+        title: fixedTitle,
+        subtitle: existing.subtitle || '',
+        description: existing.description || fallbackDescription,
+        keyPoints: Array.isArray(existing.keyPoints) && existing.keyPoints.length > 0
+          ? existing.keyPoints
+          : [
+              `${fixedTitle} overview`,
+              `Relation to ${topic}`,
+              'Key insight and impact'
+            ],
+        imageSuggestion: existing.imageSuggestion || 'relevant diagram or visual'
+      };
+    });
   }
 
   generateDemoOutline(topic, numSlides) {

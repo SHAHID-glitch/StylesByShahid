@@ -7,7 +7,12 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketIo = require('socket.io');
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load backend local env first, then fallback to project root env.
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Set fallback JWT secret if not found in .env
 if (!process.env.JWT_SECRET) {
