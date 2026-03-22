@@ -23,18 +23,35 @@ if (!process.env.JWT_SECRET) {
 // Import database adapter
 const DatabaseAdapter = require('./models/DatabaseAdapter');
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const presentationRoutes = require('./routes/presentations');
-const templateRoutes = require('./routes/templates');
-const uploadRoutes = require('./routes/upload');
-const userRoutes = require('./routes/users');
-const collaborationRoutes = require('./routes/collaboration');
-const pptGeneratorRoutes = require('./routes/ppt-generator');
-
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
 const { authMiddleware } = require('./middleware/auth');
+
+function loadOptionalRouter(modulePath, routeLabel) {
+  try {
+    return require(modulePath);
+  } catch (error) {
+    console.error(`❌ Failed to load route ${routeLabel}:`, error.message);
+
+    const router = express.Router();
+    router.use((req, res) => {
+      res.status(503).json({
+        message: `${routeLabel} route is temporarily unavailable`
+      });
+    });
+
+    return router;
+  }
+}
+
+// Import routes (fault-tolerant so one broken module does not crash the entire API)
+const authRoutes = loadOptionalRouter('./routes/auth', '/api/auth');
+const presentationRoutes = loadOptionalRouter('./routes/presentations', '/api/presentations');
+const templateRoutes = loadOptionalRouter('./routes/templates', '/api/templates');
+const uploadRoutes = loadOptionalRouter('./routes/upload', '/api/upload');
+const userRoutes = loadOptionalRouter('./routes/users', '/api/users');
+const collaborationRoutes = loadOptionalRouter('./routes/collaboration', '/api/collaboration');
+const pptGeneratorRoutes = loadOptionalRouter('./routes/ppt-generator', '/api/ppt-generator');
 
 const app = express();
 const isVercel = Boolean(process.env.VERCEL);
