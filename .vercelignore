@@ -1,0 +1,39 @@
+# Vercel Ignore File
+# Files/folders listed here won't be deployed
+
+# Dependencies (will be reinstalled)
+node_modules/
+backend/node_modules/
+.npm/
+
+# Development files
+*.md
+.git/
+.gitignore
+.env.local
+.env.development
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Build outputs (we build on Vercel)
+dist/
+build/
+
+# Development tools
+.vscode/
+.idea/
+.env.example
+
+# Keep these for production
+!api/
+!backend/
+!*.html
+!index.html
+!package.json
+!package-lock.json
+!backend/package.json
+!backend/package-lock.json

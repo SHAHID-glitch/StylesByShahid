@@ -29,12 +29,20 @@ const { authMiddleware } = require('./middleware/auth');
 
 function loadOptionalRouter(modulePath, routeLabel) {
   try {
-    return require(modulePath);
+    const router = require(modulePath);
+    console.log(`✅ Successfully loaded ${routeLabel}`);
+    return router;
   } catch (error) {
     console.error(`❌ Failed to load route ${routeLabel}: ${error.message}`);
     console.error(`   Module path: ${modulePath}`);
+    console.error(`   Error type: ${error.constructor.name}`);
+    
+    if (error.code === 'MODULE_NOT_FOUND') {
+      console.error(`   💡 Module not found - this is likely a missing dependency`);
+    }
+    
     if (error.stack) {
-      const stackLines = error.stack.split('\n').slice(0, 3).join('\n   ');
+      const stackLines = error.stack.split('\n').slice(0, 5).join('\n   ');
       console.error(`   Stack trace:\n   ${stackLines}`);
     }
 
@@ -42,7 +50,8 @@ function loadOptionalRouter(modulePath, routeLabel) {
     router.use((req, res) => {
       res.status(503).json({
         message: `${routeLabel} route is temporarily unavailable`,
-        error: error.message
+        error: error.message,
+        debug: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     });
 
@@ -138,8 +147,9 @@ app.use(express.static('../'));
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stylesbyhahid', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 3000,
-  connectTimeoutMS: 3000
+  serverSelectionTimeoutMS: isVercel ? 5000 : 3000,
+  connectTimeoutMS: isVercel ? 5000 : 3000,
+  socketTimeoutMS: isVercel ? 5000 : 3000,
 })
 .then(() => {
   console.log('✅ Connected to MongoDB');
