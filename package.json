@@ -2,7 +2,7 @@
   "name": "stylesby-shahid",
   "version": "1.0.0",
   "description": "A world-class presentation creation platform with beautiful glassmorphism design and powerful backend features",
-  "main": "index.html",
+  "main": "backend/server.js",
   "scripts": {
     "start": "cd backend && npm start",
     "dev": "cd backend && npm run dev",
