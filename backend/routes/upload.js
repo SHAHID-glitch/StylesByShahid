@@ -5,28 +5,44 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
+const isVercel = Boolean(process.env.VERCEL);
+const uploadRoot = isVercel ? '/tmp/uploads' : 'uploads';
+
+function resolveUploadPath(type) {
+  return path.join(uploadRoot, type);
+}
 
 // Ensure upload directories exist
-const uploadDirs = ['uploads/images', 'uploads/videos', 'uploads/audio', 'uploads/documents'];
+const uploadDirs = [
+  resolveUploadPath('images'),
+  resolveUploadPath('videos'),
+  resolveUploadPath('audio'),
+  resolveUploadPath('documents')
+];
 uploadDirs.forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (error) {
+    // Do not crash API startup on serverless/read-only filesystems.
+    console.warn(`⚠️ Upload dir not writable: ${dir} (${error.message})`);
   }
 });
 
 // Configure multer for different file types
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let uploadPath = 'uploads/';
+    let uploadPath = uploadRoot;
     
     if (file.mimetype.startsWith('image/')) {
-      uploadPath += 'images/';
+      uploadPath = resolveUploadPath('images');
     } else if (file.mimetype.startsWith('video/')) {
-      uploadPath += 'videos/';
+      uploadPath = resolveUploadPath('videos');
     } else if (file.mimetype.startsWith('audio/')) {
-      uploadPath += 'audio/';
+      uploadPath = resolveUploadPath('audio');
     } else {
-      uploadPath += 'documents/';
+      uploadPath = resolveUploadPath('documents');
     }
     
     cb(null, uploadPath);
@@ -223,10 +239,10 @@ router.delete('/:filename', (req, res) => {
     
     // Find file in all upload directories
     const possiblePaths = [
-      path.join('uploads/images', filename),
-      path.join('uploads/videos', filename),
-      path.join('uploads/audio', filename),
-      path.join('uploads/documents', filename)
+      path.join(resolveUploadPath('images'), filename),
+      path.join(resolveUploadPath('videos'), filename),
+      path.join(resolveUploadPath('audio'), filename),
+      path.join(resolveUploadPath('documents'), filename)
     ];
 
     let filePath = null;
@@ -261,10 +277,10 @@ router.get('/info/:filename', (req, res) => {
     
     // Find file in all upload directories
     const possiblePaths = [
-      { path: path.join('uploads/images', filename), type: 'image' },
-      { path: path.join('uploads/videos', filename), type: 'video' },
-      { path: path.join('uploads/audio', filename), type: 'audio' },
-      { path: path.join('uploads/documents', filename), type: 'document' }
+      { path: path.join(resolveUploadPath('images'), filename), type: 'image' },
+      { path: path.join(resolveUploadPath('videos'), filename), type: 'video' },
+      { path: path.join(resolveUploadPath('audio'), filename), type: 'audio' },
+      { path: path.join(resolveUploadPath('documents'), filename), type: 'document' }
     ];
 
     let fileInfo = null;

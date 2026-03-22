@@ -105,7 +105,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files for uploads
-app.use('/uploads', express.static('uploads'));
+const uploadStaticPath = isVercel ? '/tmp/uploads' : 'uploads';
+app.use('/uploads', express.static(uploadStaticPath));
 
 // Serve frontend static files from parent directory
 app.use(express.static('../'));
