@@ -9,13 +9,59 @@ const pptExportService = require('../services/pptExportService');
 const { authMiddleware } = require('../middleware/auth');
 const DatabaseAdapter = require('../models/DatabaseAdapter');
 
+function parseSlideTitles(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(title => (title || '').toString().trim())
+    .filter(Boolean);
+}
+
+/**
+ * POST /api/ppt-generator/generate-outline
+ * Generate an outline from a prompt/topic
+ */
+router.post('/generate-outline', async (req, res) => {
+  try {
+    const { topic, numSlides = 5, tone = 'Professional' } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ message: 'Topic is required' });
+    }
+
+    if (numSlides < 3 || numSlides > 20) {
+      return res.status(400).json({ message: 'Number of slides must be between 3 and 20' });
+    }
+
+    const outline = await aiService.generateOutline({
+      topic,
+      numSlides,
+      tone
+    });
+
+    res.status(200).json({
+      message: 'Outline generated successfully',
+      outline: {
+        title: outline.title || topic,
+        tone: outline.tone || tone,
+        slideTitles: outline.slideTitles || []
+      }
+    });
+  } catch (error) {
+    console.error('Generate outline error:', error);
+    res.status(500).json({ message: 'Error generating outline' });
+  }
+});
+
 /**
  * POST /api/presentations/generate
  * Generate a presentation from a given topic
  */
 router.post('/generate', async (req, res) => {
   try {
-    const { topic, numSlides = 5, tone = 'Professional' } = req.body;
+    const { topic, numSlides = 5, tone = 'Professional', slideTitles = [] } = req.body;
 
     // Validate input
     if (!topic) {
@@ -31,7 +77,8 @@ router.post('/generate', async (req, res) => {
     const plan = await aiService.generatePresentationPlan({
       topic,
       numSlides,
-      tone
+      tone,
+      slideTitles: parseSlideTitles(slideTitles)
     });
 
     res.status(200).json({
@@ -59,7 +106,7 @@ router.post('/generate', async (req, res) => {
  */
 router.post('/generate-and-export', async (req, res) => {
   try {
-    const { topic, numSlides = 5, tone = 'Professional' } = req.body;
+    const { topic, numSlides = 5, tone = 'Professional', slideTitles = [] } = req.body;
 
     if (!topic) {
       return res.status(400).json({ message: 'Topic is required' });
@@ -70,7 +117,8 @@ router.post('/generate-and-export', async (req, res) => {
     const plan = await aiService.generatePresentationPlan({
       topic,
       numSlides,
-      tone
+      tone,
+      slideTitles: parseSlideTitles(slideTitles)
     });
 
     // Create presentation

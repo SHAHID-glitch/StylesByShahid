@@ -910,14 +910,21 @@
                 return this.request('/health');
             },
 
-            async generateAIPresentation(topic, numSlides) {
-                return this.request('/ppt-generator/generate', {
+            async generateAIOutline(topic, numSlides) {
+                return this.request('/ppt-generator/generate-outline', {
                     method: 'POST',
                     body: JSON.stringify({ topic, numSlides })
                 });
             },
 
-            async exportAIPresentation(topic, numSlides) {
+            async generateAIPresentation(topic, numSlides, slideTitles = []) {
+                return this.request('/ppt-generator/generate', {
+                    method: 'POST',
+                    body: JSON.stringify({ topic, numSlides, slideTitles })
+                });
+            },
+
+            async exportAIPresentation(topic, numSlides, slideTitles = []) {
                 const url = `${API_BASE_URL}/ppt-generator/generate-and-export`;
                 const response = await fetch(url, {
                     method: 'POST',
@@ -925,7 +932,7 @@
                         'Content-Type': 'application/json',
                         ...(authState.token && { 'Authorization': `Bearer ${authState.token}` })
                     },
-                    body: JSON.stringify({ topic, numSlides })
+                    body: JSON.stringify({ topic, numSlides, slideTitles })
                 });
 
                 if (!response.ok) {
@@ -1168,8 +1175,8 @@
             const content = `
                 <form id="ai-ppt-form">
                     <div class="form-group">
-                        <label for="ai-topic">Presentation Topic:</label>
-                        <input type="text" id="ai-topic" name="topic" required placeholder="e.g., AI in Healthcare">
+                        <label for="ai-topic">Prompt / Topic:</label>
+                        <input type="text" id="ai-topic" name="topic" required placeholder="e.g., AI and tech in education startups">
                     </div>
                     <div class="form-group">
                         <label for="ai-slides">Number of Slides:</label>
@@ -1181,30 +1188,119 @@
                             <option value="12">12 Slides</option>
                         </select>
                     </div>
+                    <div class="form-actions" style="margin-bottom: 14px;">
+                        <button type="button" id="generate-outline-btn" class="btn btn-primary">Generate Outline</button>
+                    </div>
+                    <div id="outline-builder" style="display: none; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; background: #f9fafb; margin-bottom: 14px;">
+                        <h4 style="margin-bottom: 10px; color: #1f2937;">Outline (Editable)</h4>
+                        <p style="font-size: 14px; color: #6b7280; margin-bottom: 12px;">Edit slide titles before generating your PPT.</p>
+                        <div id="outline-list"></div>
+                    </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Generate Full AI PPT</button>
+                        <button type="submit" id="generate-ppt-btn" class="btn btn-primary" disabled>Generate PPT From Outline</button>
                     </div>
                     <div id="ai-ppt-error" class="error-message"></div>
                 </form>
             `;
 
             const modal = createModal('AI PPT Maker', content);
+            let currentOutline = [];
 
-            document.getElementById('ai-ppt-form').onsubmit = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const topic = formData.get('topic');
-                const numSlides = Number(formData.get('numSlides'));
-                const submitButton = e.target.querySelector('button[type="submit"]');
-                const errorNode = document.getElementById('ai-ppt-error');
+            const form = document.getElementById('ai-ppt-form');
+            const outlineBtn = document.getElementById('generate-outline-btn');
+            const outlineBuilder = document.getElementById('outline-builder');
+            const outlineList = document.getElementById('outline-list');
+            const generatePptBtn = document.getElementById('generate-ppt-btn');
+            const errorNode = document.getElementById('ai-ppt-error');
+
+            const renderOutlineEditors = (slideTitles) => {
+                outlineList.innerHTML = '';
+
+                slideTitles.forEach((title, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'form-group';
+                    row.style.marginBottom = '10px';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `outline-slide-${index}`;
+                    label.textContent = `Slide ${index + 1} Title`;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = `outline-slide-${index}`;
+                    input.className = 'outline-title-input';
+                    input.value = title;
+                    input.required = true;
+
+                    row.appendChild(label);
+                    row.appendChild(input);
+                    outlineList.appendChild(row);
+                });
+
+                outlineBuilder.style.display = 'block';
+                generatePptBtn.disabled = false;
+            };
+
+            const getEditedSlideTitles = () => {
+                return Array.from(document.querySelectorAll('.outline-title-input'))
+                    .map(input => input.value.trim())
+                    .filter(Boolean);
+            };
+
+            outlineBtn.onclick = async () => {
+                const topic = document.getElementById('ai-topic').value.trim();
+                const numSlides = Number(document.getElementById('ai-slides').value);
 
                 errorNode.textContent = '';
+
+                if (!topic) {
+                    errorNode.textContent = 'Please enter a prompt/topic first';
+                    return;
+                }
+
+                outlineBtn.disabled = true;
+                outlineBtn.textContent = 'Generating Outline...';
+
+                try {
+                    const response = await api.generateAIOutline(topic, numSlides);
+                    const slideTitles = response.outline?.slideTitles || [];
+
+                    if (!slideTitles.length) {
+                        throw new Error('No outline was generated');
+                    }
+
+                    currentOutline = slideTitles;
+                    renderOutlineEditors(currentOutline);
+                    showSuccess('Outline generated. You can now edit slide titles.');
+                } catch (error) {
+                    errorNode.textContent = error.message || 'Failed to generate outline';
+                } finally {
+                    outlineBtn.disabled = false;
+                    outlineBtn.textContent = 'Generate Outline';
+                }
+            };
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const topic = formData.get('topic').trim();
+                const numSlides = Number(formData.get('numSlides'));
+                const slideTitles = getEditedSlideTitles();
+                const submitButton = generatePptBtn;
+
+                errorNode.textContent = '';
+
+                if (!slideTitles.length) {
+                    errorNode.textContent = 'Generate an outline first and edit at least one slide title';
+                    return;
+                }
+
                 submitButton.disabled = true;
                 submitButton.textContent = 'Generating...';
 
                 try {
-                    const preview = await api.generateAIPresentation(topic, numSlides);
-                    const blob = await api.exportAIPresentation(topic, numSlides);
+                    const preview = await api.generateAIPresentation(topic, numSlides, slideTitles);
+                    const blob = await api.exportAIPresentation(topic, numSlides, slideTitles);
                     const fileUrl = window.URL.createObjectURL(blob);
                     const fileLink = document.createElement('a');
                     fileLink.href = fileUrl;
@@ -1220,7 +1316,7 @@
                     errorNode.textContent = error.message || 'Failed to generate presentation';
                 } finally {
                     submitButton.disabled = false;
-                    submitButton.textContent = 'Generate Full AI PPT';
+                    submitButton.textContent = 'Generate PPT From Outline';
                 }
             };
         }

@@ -46,19 +46,20 @@ class AIService {
   }
 
   async generatePresentationPlan(options) {
-    const { topic, numSlides = 5, tone = 'Professional' } = options;
+    const { topic, numSlides = 5, tone = 'Professional', slideTitles = [] } = options;
+    const sanitizedSlideTitles = this.sanitizeSlideTitles(slideTitles, numSlides);
 
     if (!this.isAvailable) {
       return {
         title: topic,
         tone,
         theme: 'default',
-        slides: this.generateDemoPresentation(topic, numSlides, tone)
+        slides: this.generateDemoPresentation(topic, numSlides, tone, sanitizedSlideTitles)
       };
     }
 
     try {
-      const prompt = this.buildPrompt(topic, numSlides, tone);
+      const prompt = this.buildPrompt(topic, numSlides, tone, sanitizedSlideTitles);
       const response = await this.callOpenAI(prompt);
       const parsed = this.parseAIResponse(response);
 
@@ -84,7 +85,7 @@ class AIService {
         title: topic,
         tone,
         theme: 'default',
-        slides: this.generateDemoPresentation(topic, numSlides, tone)
+        slides: this.generateDemoPresentation(topic, numSlides, tone, sanitizedSlideTitles)
       };
     } catch (error) {
       console.error('AI Generation error:', error);
@@ -92,16 +93,69 @@ class AIService {
         title: topic,
         tone,
         theme: 'default',
-        slides: this.generateDemoPresentation(topic, numSlides, tone)
+        slides: this.generateDemoPresentation(topic, numSlides, tone, sanitizedSlideTitles)
       };
     }
   }
 
-  buildPrompt(topic, numSlides, tone) {
+  async generateOutline(options) {
+    const { topic, numSlides = 5, tone = 'Professional' } = options;
+
+    if (!this.isAvailable) {
+      return {
+        title: topic,
+        tone,
+        slideTitles: this.generateDemoOutline(topic, numSlides)
+      };
+    }
+
+    try {
+      const prompt = this.buildOutlinePrompt(topic, numSlides, tone);
+      const response = await this.callOpenAI(prompt);
+      const parsed = this.parseAIResponse(response);
+
+      if (parsed && Array.isArray(parsed.slideTitles) && parsed.slideTitles.length > 0) {
+        return {
+          title: parsed.title || topic,
+          tone: parsed.tone || tone,
+          slideTitles: this.sanitizeSlideTitles(parsed.slideTitles, numSlides)
+        };
+      }
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return {
+          title: topic,
+          tone,
+          slideTitles: this.sanitizeSlideTitles(parsed, numSlides)
+        };
+      }
+
+      return {
+        title: topic,
+        tone,
+        slideTitles: this.generateDemoOutline(topic, numSlides)
+      };
+    } catch (error) {
+      console.error('AI Outline generation error:', error);
+      return {
+        title: topic,
+        tone,
+        slideTitles: this.generateDemoOutline(topic, numSlides)
+      };
+    }
+  }
+
+  buildPrompt(topic, numSlides, tone, slideTitles = []) {
+    const hasUserOutline = Array.isArray(slideTitles) && slideTitles.length > 0;
+    const outlineInstruction = hasUserOutline
+      ? `\nUser-provided slide titles (must use these exact titles in the same order):\n${slideTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n`
+      : '';
+
     return `Generate a comprehensive ${numSlides}-slide presentation plan with detailed content.
 
 Topic: "${topic}"
 Requested tone: "${tone}"
+${outlineInstruction}
 
 Requirements:
 - Return ONLY valid JSON object, no markdown or extra text
@@ -128,6 +182,29 @@ Return exactly this JSON format:
       "keyPoints": ["First key point", "Second key point", "Third key point"],
       "imageSuggestion": "diagram showing process flow"
     }
+  ]
+}`;
+  }
+
+  buildOutlinePrompt(topic, numSlides, tone) {
+    return `Create a concise presentation outline with exactly ${numSlides} slide titles.
+
+Topic: "${topic}"
+Requested tone: "${tone}"
+
+Requirements:
+- Return ONLY valid JSON object, no markdown or extra text
+- The outline must have a logical start-to-finish flow
+- Each title should be clear, specific, and max 10 words
+- Include one intro and one conclusion slide
+
+Return exactly this JSON format:
+{
+  "title": "Presentation Title",
+  "tone": "Professional",
+  "slideTitles": [
+    "Slide 1 title",
+    "Slide 2 title"
   ]
 }`;
   }
@@ -183,10 +260,40 @@ Return exactly this JSON format:
     return 'default';
   }
 
+  sanitizeSlideTitles(slideTitles, numSlides) {
+    if (!Array.isArray(slideTitles)) {
+      return [];
+    }
+
+    const normalizedTitles = slideTitles
+      .map(title => (title || '').toString().trim())
+      .filter(Boolean)
+      .slice(0, numSlides);
+
+    return normalizedTitles;
+  }
+
+  generateDemoOutline(topic, numSlides) {
+    const demoTitles = [
+      `Introduction to ${topic}`,
+      `${topic}: Current Landscape`,
+      `Core Concepts of ${topic}`,
+      `${topic} Use Cases`,
+      `Benefits and Opportunities`,
+      `Challenges and Risks`,
+      `Implementation Strategy`,
+      `Future of ${topic}`,
+      `Key Takeaways`,
+      `Conclusion and Next Steps`
+    ];
+
+    return demoTitles.slice(0, numSlides);
+  }
+
   /**
    * Generate demo presentation (for testing without API key)
    */
-  generateDemoPresentation(topic, numSlides, tone) {
+  generateDemoPresentation(topic, numSlides, tone, slideTitles = []) {
     const slides = [];
 
     // Content slide templates with detailed information
@@ -251,8 +358,9 @@ Return exactly this JSON format:
 
     for (let i = 0; i < numSlides; i++) {
       const template = contentTemplates[i % contentTemplates.length];
+      const customTitle = slideTitles[i];
       slides.push({
-        title: template.title,
+        title: customTitle || template.title,
         subtitle: template.subtitle,
         description: template.description,
         keyPoints: template.keyPoints,
