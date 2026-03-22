@@ -20,4 +20,10 @@ try {
   });
 }
 
-module.exports = app;
+// Vercel serverless handler - must be a function
+module.exports = (req, res) => {
+  if (!app) {
+    return res.status(500).json({ message: 'API not initialized' });
+  }
+  return app(req, res);
+};
