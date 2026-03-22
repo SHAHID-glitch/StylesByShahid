@@ -37,13 +37,24 @@ const errorHandler = require('./middleware/errorHandler');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:8080",
-    methods: ["GET", "POST"]
-  }
-});
+const isVercel = Boolean(process.env.VERCEL);
+
+let server = null;
+let io = {
+  emit: () => {},
+  on: () => {},
+  to: () => ({ emit: () => {} })
+};
+
+if (!isVercel) {
+  server = http.createServer(app);
+  io = socketIo(server, {
+    cors: {
+      origin: process.env.CLIENT_URL || "http://localhost:8080",
+      methods: ["GET", "POST"]
+    }
+  });
+}
 
 // Make io accessible to routes
 app.set('io', io);
@@ -75,8 +86,9 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // CORS configuration
+const corsOrigin = process.env.CLIENT_URL || (isVercel ? true : "http://localhost:8080");
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:8080",
+  origin: corsOrigin,
   credentials: true
 }));
 
@@ -134,39 +146,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Socket.io for real-time collaboration
-io.on('connection', (socket) => {
-  console.log('👤 User connected:', socket.id);
+// Socket.io for real-time collaboration (disabled on Vercel serverless)
+if (!isVercel) {
+  io.on('connection', (socket) => {
+    console.log('👤 User connected:', socket.id);
 
-  // Join presentation room
-  socket.on('join-presentation', (presentationId) => {
-    socket.join(presentationId);
-    console.log(`User ${socket.id} joined presentation ${presentationId}`);
-    socket.to(presentationId).emit('user-joined', socket.id);
-  });
+    // Join presentation room
+    socket.on('join-presentation', (presentationId) => {
+      socket.join(presentationId);
+      console.log(`User ${socket.id} joined presentation ${presentationId}`);
+      socket.to(presentationId).emit('user-joined', socket.id);
+    });
 
-  // Handle real-time slide updates
-  socket.on('slide-update', (data) => {
-    socket.to(data.presentationId).emit('slide-updated', data);
-  });
+    // Handle real-time slide updates
+    socket.on('slide-update', (data) => {
+      socket.to(data.presentationId).emit('slide-updated', data);
+    });
 
-  // Handle cursor movements for collaboration
-  socket.on('cursor-move', (data) => {
-    socket.to(data.presentationId).emit('cursor-moved', {
-      userId: socket.id,
-      position: data.position
+    // Handle cursor movements for collaboration
+    socket.on('cursor-move', (data) => {
+      socket.to(data.presentationId).emit('cursor-moved', {
+        userId: socket.id,
+        position: data.position
+      });
+    });
+
+    // Handle comments
+    socket.on('new-comment', (data) => {
+      socket.to(data.presentationId).emit('comment-added', data);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('👤 User disconnected:', socket.id);
     });
   });
-
-  // Handle comments
-  socket.on('new-comment', (data) => {
-    socket.to(data.presentationId).emit('comment-added', data);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('👤 User disconnected:', socket.id);
-  });
-});
+}
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
@@ -181,11 +195,13 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 5000;
+if (!isVercel) {
+  const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`🚀 StylesByShahid Backend running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+  server.listen(PORT, () => {
+    console.log(`🚀 StylesByShahid Backend running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
 module.exports = { app, io };
