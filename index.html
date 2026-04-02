@@ -676,7 +676,7 @@
             <p>StylesByShahid helps you create stunning presentations with AI-powered design tools. No design skills needed.</p>
             <div class="hero-buttons">
                 <button class="btn btn-primary">Get Started Free</button>
-                <button class="btn btn-outline">Watch Demo</button>
+                <button id="watchDemoBtn" class="btn btn-outline">Watch Demo</button>
             </div>
             <div class="hero-image">
                 <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Crect fill='%234a6cf7' width='800' height='400'/%3E%3Cpath fill='%238a54f7' d='M0,0 L800,400 L0,400 Z'/%3E%3Ccircle fill='white' opacity='0.2' cx='100' cy='50' r='50'/%3E%3Ccircle fill='white' opacity='0.2' cx='700' cy='350' r='80'/%3E%3Ccircle fill='white' opacity='0.2' cx='500' cy='100' r='60'/%3E%3C/svg%3E" alt="Presentation Interface">
@@ -1412,6 +1412,14 @@
             if (modal) {
                 modal.style.display = 'none';
             }
+
+            if (modalId === 'demoVideoModal') {
+                const player = document.getElementById('demoVideoPlayer');
+                if (player) {
+                    player.pause();
+                    player.currentTime = 0;
+                }
+            }
         }
 
         function showNotification(message, type = 'success') {
@@ -1684,7 +1692,7 @@
                     <button class="filter-btn active" onclick="filterTemplates('all')">All</button>
                     <button class="filter-btn" onclick="filterTemplates('business')">Business</button>
                     <button class="filter-btn" onclick="filterTemplates('education')">Education</button>
-                    <button class="filter-btn" onclick="filterTemplates('creative')">Creative</button>
+                    <button class="filter-btn" onclick="filterTemplates('marketing')">Marketing</button>
                     <button class="filter-btn" onclick="filterTemplates('minimal')">Minimal</button>
                 </div>
                 <div id="templateGrid" class="template-grid">
@@ -1693,6 +1701,22 @@
                 <div id="templateError" class="error-message" style="text-align: center;"></div>
             </div>
         </div>
+    </div>
+
+    <!-- Demo Video Modal -->
+    <div id="demoVideoModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content" style="max-width:900px;">
+        <div class="modal-header">
+          <h3>Product Demo</h3>
+          <button class="modal-close" onclick="closeModal('demoVideoModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <video id="demoVideoPlayer" controls style="width:100%;">
+            <source src="Video_Edit_Request_and_Delivery.mp4" type="video/mp4">
+            Your browser does not support video playback.
+          </video>
+        </div>
+      </div>
     </div>
 
 </body>
