@@ -29,6 +29,7 @@ const authMiddleware = async (req, res, next) => {
 
     // Add user to request object
     req.user = {
+      _id: user._id || user.id,
       id: user._id || user.id,
       email: user.email,
       username: user.username,
@@ -68,6 +69,7 @@ const optionalAuth = async (req, res, next) => {
     const user = await User.findById(decoded.id).select('-password');
     
     if (user) {
+      user._id = user._id || user.id;
       req.user = user;
     }
     

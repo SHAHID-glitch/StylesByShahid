@@ -67,6 +67,7 @@ const uploadRoutes = loadOptionalRouter('./routes/upload', '/api/upload');
 const userRoutes = loadOptionalRouter('./routes/users', '/api/users');
 const collaborationRoutes = loadOptionalRouter('./routes/collaboration', '/api/collaboration');
 const pptGeneratorRoutes = loadOptionalRouter('./routes/ppt-generator', '/api/ppt-generator');
+const dashboardRoutes = loadOptionalRouter('./routes/dashboard', '/api/dashboard');
 
 const app = express();
 const isVercel = Boolean(process.env.VERCEL);
@@ -166,6 +167,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stylesbyh
 app.use('/api/auth', authRoutes);
 app.use('/api/presentations', presentationRoutes);
 app.use('/api/ppt-generator', pptGeneratorRoutes);
+app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/upload', authMiddleware, uploadRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
