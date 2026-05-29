@@ -559,6 +559,168 @@
             line-height: 1.4;
         }
 
+        /* Dashboard Styles */
+        .dashboard-modal {
+            max-width: 980px;
+        }
+
+        .dashboard-shell {
+            display: grid;
+            gap: 24px;
+        }
+
+        .dashboard-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 20px;
+            align-items: center;
+            padding: 26px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #eef3ff 0%, #f7f4ff 100%);
+            border: 1px solid #e1e8ff;
+        }
+
+        .dashboard-hero h2 {
+            color: #24324b;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-hero p {
+            color: #5d6980;
+            margin: 0;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .dashboard-stat {
+            border: 1px solid #e6eaf2;
+            border-radius: 10px;
+            padding: 18px;
+            background: #fff;
+        }
+
+        .dashboard-stat i {
+            color: #4a6cf7;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+        }
+
+        .dashboard-stat strong {
+            display: block;
+            color: #1f2a40;
+            font-size: 2rem;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .dashboard-stat span {
+            color: #667085;
+            font-size: 0.92rem;
+        }
+
+        .dashboard-panel {
+            border: 1px solid #e6eaf2;
+            border-radius: 10px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .dashboard-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            border-bottom: 1px solid #eef1f6;
+        }
+
+        .dashboard-panel-header h3 {
+            color: #24324b;
+            margin: 0;
+        }
+
+        .dashboard-list {
+            display: grid;
+        }
+
+        .dashboard-item {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f2f6;
+        }
+
+        .dashboard-item:last-child {
+            border-bottom: none;
+        }
+
+        .dashboard-item-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #edf2ff;
+            color: #4a6cf7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard-item h4 {
+            color: #24324b;
+            margin: 0 0 4px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .dashboard-item p,
+        .dashboard-empty p {
+            color: #667085;
+            margin: 0;
+            font-size: 0.92rem;
+        }
+
+        .dashboard-badge {
+            border-radius: 999px;
+            background: #eef3ff;
+            color: #4a6cf7;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            text-transform: capitalize;
+        }
+
+        .dashboard-empty,
+        .dashboard-loading,
+        .dashboard-error {
+            padding: 34px 20px;
+            text-align: center;
+        }
+
+        .dashboard-empty i,
+        .dashboard-loading i,
+        .dashboard-error i {
+            color: #4a6cf7;
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .dashboard-error i {
+            color: #e74c3c;
+        }
+
         /* Notification Styles */
         .notification {
             position: fixed;
@@ -626,6 +788,24 @@
             }
 
             .template-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-hero,
+            .dashboard-item {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-actions {
+                justify-content: stretch;
+            }
+
+            .dashboard-actions .btn,
+            .dashboard-item .btn {
+                width: 100%;
+            }
+
+            .dashboard-stats {
                 grid-template-columns: 1fr;
             }
 
@@ -904,6 +1084,10 @@
                     method: 'POST',
                     body: JSON.stringify(presentationData)
                 });
+            },
+
+            async getDashboard() {
+                return this.request('/dashboard');
             },
 
             // Health check
@@ -1348,10 +1532,180 @@
             showSuccess('You have been logged out.');
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+
+        function formatDashboardDate(value) {
+            if (!value) {
+                return 'Recently updated';
+            }
+
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return 'Recently updated';
+            }
+
+            return date.toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function getDashboardUserName(user) {
+            const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+            return fullName || user?.username || 'Creator';
+        }
+
+        function renderDashboard(data) {
+            const modalBody = document.getElementById('dashboardBody');
+            if (!modalBody) {
+                return;
+            }
+
+            const userName = getDashboardUserName(data.user || authState.user);
+            const recentPresentations = data.recentPresentations || [];
+            const recentList = recentPresentations.length
+                ? recentPresentations.map((presentation) => `
+                    <div class="dashboard-item">
+                        <div class="dashboard-item-icon">
+                            <i class="fas fa-file-powerpoint"></i>
+                        </div>
+                        <div>
+                            <h4>${escapeHtml(presentation.title || 'Untitled presentation')}</h4>
+                            <p>Updated ${formatDashboardDate(presentation.updatedAt || presentation.createdAt)}</p>
+                        </div>
+                        <span class="dashboard-badge">${escapeHtml(presentation.status || 'draft')}</span>
+                    </div>
+                `).join('')
+                : `
+                    <div class="dashboard-empty">
+                        <i class="fas fa-layer-group"></i>
+                        <h3>No presentations yet</h3>
+                        <p>Create your first AI presentation or start from a template.</p>
+                    </div>
+                `;
+
+            modalBody.innerHTML = `
+                <div class="dashboard-shell">
+                    <div class="dashboard-hero">
+                        <div>
+                            <h2>Welcome back, ${escapeHtml(userName)}</h2>
+                            <p>Track your work, jump into recent decks, and start your next presentation from one place.</p>
+                        </div>
+                        <div class="dashboard-actions">
+                            <button class="btn btn-primary" onclick="closeModal('dashboardModal'); showAIPresentationModal();">
+                                <i class="fas fa-wand-magic-sparkles"></i> New AI Deck
+                            </button>
+                            <button class="btn btn-outline" onclick="closeModal('dashboardModal'); showTemplateGallery();">
+                                <i class="fas fa-table-cells-large"></i> Browse Templates
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-stats">
+                        <div class="dashboard-stat">
+                            <i class="fas fa-file-powerpoint"></i>
+                            <strong>${data.presentationsCount || 0}</strong>
+                            <span>Presentations</span>
+                        </div>
+                        <div class="dashboard-stat">
+                            <i class="fas fa-palette"></i>
+                            <strong>${data.templatesCount || 0}</strong>
+                            <span>Templates available</span>
+                        </div>
+                        <div class="dashboard-stat">
+                            <i class="fas fa-user-check"></i>
+                            <strong>${escapeHtml(data.user?.role || authState.user?.role || 'user')}</strong>
+                            <span>Account role</span>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-panel">
+                        <div class="dashboard-panel-header">
+                            <h3>Recent Presentations</h3>
+                            <button class="btn btn-outline" onclick="loadDashboard()">Refresh</button>
+                        </div>
+                        <div class="dashboard-list">
+                            ${recentList}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadDashboard() {
+            const modalBody = document.getElementById('dashboardBody');
+            if (!modalBody) {
+                return;
+            }
+
+            modalBody.innerHTML = `
+                <div class="dashboard-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <h3>Loading dashboard</h3>
+                    <p>Gathering your latest presentation activity.</p>
+                </div>
+            `;
+
+            try {
+                const data = await api.getDashboard();
+                renderDashboard(data);
+            } catch (error) {
+                modalBody.innerHTML = `
+                    <div class="dashboard-error">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <h3>Dashboard could not load</h3>
+                        <p>${escapeHtml(error.message || 'Please check your connection and try again.')}</p>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="loadDashboard()">Try Again</button>
+                            <button class="btn btn-outline" onclick="closeModal('dashboardModal')">Close</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
         function showDashboard() {
-            // Here you would navigate to the dashboard page
-            alert('Dashboard feature coming soon! For now, you can start creating presentations.');
-            showTemplateGallery();
+            if (!authState.isAuthenticated) {
+                showError('Please sign in to view your dashboard.');
+                openModal('signInModal');
+                return;
+            }
+
+            const existingModal = document.getElementById('dashboardModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'dashboardModal';
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content dashboard-modal">
+                    <div class="modal-header">
+                        <h3>Dashboard</h3>
+                        <button class="modal-close" onclick="closeModal('dashboardModal')">&times;</button>
+                    </div>
+                    <div class="modal-body" id="dashboardBody"></div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal('dashboardModal');
+                }
+            });
+
+            loadDashboard();
         }
 
         // Notification functions

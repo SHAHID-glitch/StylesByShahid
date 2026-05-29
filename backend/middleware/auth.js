@@ -66,11 +66,18 @@ const optionalAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await DatabaseAdapter.findUserById(decoded.id);
     
     if (user) {
-      user._id = user._id || user.id;
-      req.user = user;
+      req.user = {
+        _id: user._id || user.id,
+        id: user._id || user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      };
     }
     
     next();

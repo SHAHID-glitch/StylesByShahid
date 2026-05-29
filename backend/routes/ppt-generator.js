@@ -6,8 +6,10 @@ const express = require('express');
 const router = express.Router();
 const aiService = require('../services/aiService');
 const pptExportService = require('../services/pptExportService');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, optionalAuth } = require('../middleware/auth');
 const DatabaseAdapter = require('../models/DatabaseAdapter');
+const DemoDatabase = require('../models/DemoDatabase');
+const Presentation = require('../models/Presentation');
 
 function parseSlideTitles(value) {
   if (!Array.isArray(value)) {
@@ -17,6 +19,56 @@ function parseSlideTitles(value) {
   return value
     .map(title => (title || '').toString().trim())
     .filter(Boolean);
+}
+
+function mapGeneratedSlides(slides = []) {
+  return slides.map((slide, index) => ({
+    title: slide.title || `Slide ${index + 1}`,
+    content: {
+      subtitle: slide.subtitle || '',
+      bullets: slide.bullets || [],
+      speakerNotes: slide.speakerNotes || slide.notes || ''
+    },
+    layout: index === 0 ? 'title' : 'content',
+    elements: [],
+    notes: slide.speakerNotes || slide.notes || '',
+    order: index
+  }));
+}
+
+async function saveGeneratedPresentationForUser(req, plan) {
+  if (!req.user) {
+    return null;
+  }
+
+  const ownerId = req.user.id || req.user._id;
+  const slides = mapGeneratedSlides(plan.slides);
+  const presentationData = {
+    title: plan.title,
+    description: `AI generated presentation about ${plan.topic || plan.title}`,
+    slides,
+    status: 'draft',
+    isPublic: false,
+    category: 'other',
+    tags: ['ai-generated']
+  };
+
+  if (DatabaseAdapter.useDemo) {
+    return DemoDatabase.createPresentation({
+      ...presentationData,
+      ownerId,
+      template: plan.theme || 'ai-generated'
+    });
+  }
+
+  const presentation = new Presentation({
+    ...presentationData,
+    owner: ownerId,
+    lastEditedBy: ownerId
+  });
+
+  await presentation.save();
+  return presentation;
 }
 
 /**
@@ -104,7 +156,7 @@ router.post('/generate', async (req, res) => {
  * POST /api/presentations/generate-and-export
  * Generate presentation and export directly to PPT
  */
-router.post('/generate-and-export', async (req, res) => {
+router.post('/generate-and-export', optionalAuth, async (req, res) => {
   try {
     const { topic, numSlides = 5, tone = 'Professional', slideTitles = [] } = req.body;
 
@@ -120,6 +172,12 @@ router.post('/generate-and-export', async (req, res) => {
       tone,
       slideTitles: parseSlideTitles(slideTitles)
     });
+
+    try {
+      await saveGeneratedPresentationForUser(req, { ...plan, topic });
+    } catch (saveError) {
+      console.error('Generated presentation save warning:', saveError);
+    }
 
     // Create presentation
     const prs = await pptExportService.createPresentation(plan.title, plan.slides, plan.theme);

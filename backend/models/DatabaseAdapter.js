@@ -7,7 +7,7 @@ const DemoDatabase = require('../models/DemoDatabase');
 
 class DatabaseAdapter {
   constructor() {
-    this.useDemo = false;
+    this.useDemo = true;
   }
 
   async init() {
