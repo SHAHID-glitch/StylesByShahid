@@ -30,6 +30,50 @@
 - **Security**: Helmet, CORS, bcrypt
 - **Validation**: Joi
 
+## Architecture
+
+```mermaid
+flowchart TD
+
+    user["User"]
+
+    ui["StylesByShahid UI<br/>HTML • CSS • JavaScript"]
+
+    api["Node.js + Express<br/>Backend API"]
+
+    db["MongoDB<br/>Users • Projects • Presentations"]
+
+    groq["Groq AI API<br/>Content Generation"]
+
+    engine["AI Presentation<br/>Generation Engine"]
+
+    slides["Slide Generator"]
+
+    templates["Template Engine"]
+
+    content["Content Processor"]
+
+    output["Generated Output<br/>• PPT Slides<br/>• Templates<br/>• Content"]
+
+    user --> ui
+    ui --> api
+
+    api --> db
+    api --> groq
+
+    db --> engine
+    groq --> engine
+
+    engine --> slides
+    engine --> templates
+    engine --> content
+
+    slides --> output
+    templates --> output
+    content --> output
+```
+
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -85,6 +129,7 @@
 5. **Open your browser**
    - Frontend: `http://localhost:8080`
    - Backend API: `http://localhost:5000/api`
+   
 
 ## 📁 Project Structure
 
