@@ -23,14 +23,9 @@ Instead of spending hours researching, organizing content, and formatting slides
 
 👉 **[Live Web App](https://shahidmalik786-stylesbyshahid.hf.space/)**
 
-## Screenshots
+## Screenshot
 
-* Landing Page
-* Presentation Generator
-* Analytics Dashboard
-* Generated Presentation
-* PPTX Export
-
+<img width="1507" height="728" alt="stylesbyshahid" src="https://github.com/user-attachments/assets/4d203730-c759-46c7-bc81-b5f34704b9e6" />
 
 ---
 
@@ -389,6 +384,8 @@ Core Areas of Focus:
 # 👤 Project About
 
 Author: Shahid Malik
+
+Linkedin Profile: https://www.linkedin.com/in/shahid-malik-765113306
 
 GitHub Prrofile: https://github.com/SHAHID-glitch
 
