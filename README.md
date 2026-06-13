@@ -251,12 +251,6 @@ StylesByShahid demonstrates how AI can reduce friction between ideas and present
 
 ---
 
-## Architecture Diagram
-
-Included in this repository.
-
----
-
 # 📁 Project Structure
 
 ```text
@@ -353,12 +347,6 @@ Contributions are welcome.
 3. Commit your changes
 4. Push to GitHub
 5. Open a Pull Request
-
----
-
-# 📝 License
-
-MIT License
 
 ---
 
