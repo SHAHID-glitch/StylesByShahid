@@ -1,36 +1,142 @@
-# 🎨 StylesByShahid - Modern Presentation Platform
+# 🎨 StylesByShahid
 
-> A world-class presentation creation platform with beautiful glassmorphism design and powerful backend features.
+> Transform any idea into a professional presentation in seconds using AI.
 
-![StylesByShahid Banner](https://img.shields.io/badge/StylesByShahid-Presentation%20Platform-blue?style=for-the-badge&logo=presentation&logoColor=white)
+![StylesByShahid Banner](https://img.shields.io/badge/Agents%20League%202026-Creative%20Apps-blue?style=for-the-badge)
+![Groq AI](https://img.shields.io/badge/Powered%20by-Groq-orange?style=for-the-badge)
+![Node.js](https://img.shields.io/badge/Backend-Node.js-green?style=for-the-badge)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-brightgreen?style=for-the-badge)
 
-## ✨ Features
+---
 
-### 🎭 Frontend Features
-- **Modern Glassmorphism Design** - Beautiful frosted glass effects throughout
-- **Dark/Light Theme Toggle** - Seamless theme switching with smooth transitions
-- **Responsive Design** - Perfect experience on all devices
-- **Smooth Animations** - Elegant hover effects and micro-interactions
-- **Premium Typography** - Professional Inter font family
-- **CSS Variables** - Complete theming system for easy customization
+# 🚀 Overview
 
-### 🚀 Backend Features
-- **User Authentication** - Secure JWT-based authentication system
-- **Template Management** - Dynamic template creation and management
-- **Real-time Collaboration** - Socket.io powered live collaboration
-- **RESTful API** - Clean and well-documented API endpoints
-- **MongoDB Integration** - Robust data storage with Mongoose ODM
+StylesByShahid is an AI-powered presentation creation platform that transforms a simple topic into a structured, presentation-ready deck.
 
-### 🔧 Technical Stack
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT (JSON Web Tokens)
-- **Real-time**: Socket.io
-- **Security**: Helmet, CORS, bcrypt
-- **Validation**: Joi
+Built for the **Microsoft Agents League Hackathon 2026 – Creative Apps Challenge**, the platform combines AI-powered content generation, modern presentation design, analytics, and PPTX export into a seamless experience.
 
-## Architecture
+Instead of spending hours researching, organizing content, and formatting slides, users can generate professional presentations within seconds.
+
+### 🎥 Demo Media
+
+👉 **[Watch the Full Demo Video on Vimeo](https://vimeo.com/1201001888?share=copy&fl=sv&fe=ci#t=0)**
+
+👉 **[Live Web App](https://shahidmalik786-stylesbyshahid.hf.space/)**
+
+## Screenshots
+
+* Landing Page
+* Presentation Generator
+* Analytics Dashboard
+* Generated Presentation
+* PPTX Export
+
+
+---
+
+# 🎯 Problem
+
+Creating high-quality presentations requires:
+
+* Researching information
+* Organizing content logically
+* Structuring slides
+* Maintaining design consistency
+* Preparing export-ready presentations
+
+For students, educators, creators, and professionals, this process can take hours.
+
+---
+
+# 💡 Solution
+
+StylesByShahid automates presentation creation using AI.
+
+Users simply enter a topic and the platform:
+
+1. Generates presentation content using AI
+2. Organizes information into structured slides
+3. Applies presentation-ready formatting
+4. Provides presentation analytics
+5. Exports presentations as PPTX files
+
+This reduces presentation preparation time from hours to minutes.
+
+---
+
+# ✨ Key Features
+
+## 🤖 AI Presentation Generation
+
+Generate complete presentations from a single topic using Groq AI.
+
+### Example
+
+Input:
+
+Future of Artificial Intelligence
+
+Output:
+
+* Title Slide
+* Introduction
+* Current Landscape
+* Applications
+* Benefits
+* Challenges
+* Future Outlook
+* Conclusion
+
+---
+
+## ⚡ Groq-Powered AI
+
+Leverages Groq's high-performance inference capabilities for:
+
+* Fast content generation
+* Structured presentation creation
+* Topic understanding
+* Intelligent content organization
+
+---
+
+## 🎨 Modern User Experience
+
+Features a clean and responsive interface with:
+
+* Glassmorphism design
+* Dark/Light mode
+* Smooth animations
+* Mobile responsiveness
+* Professional typography
+
+---
+
+## 📊 Analytics Dashboard
+
+Track presentation activity and generated content through an integrated dashboard.
+
+---
+
+## 📂 PPTX Export
+
+Export presentations as PowerPoint-compatible PPTX files for editing and sharing.
+
+---
+
+## 🔒 Secure Architecture
+
+Built using industry-standard security practices:
+
+* JWT Authentication
+* Password Hashing
+* Input Validation
+* CORS Protection
+* Secure API Design
+
+---
+
+# 🏗 System Architecture
 
 ```mermaid
 flowchart TD
@@ -39,198 +145,270 @@ flowchart TD
 
     ui["StylesByShahid UI<br/>HTML • CSS • JavaScript"]
 
-    api["Node.js + Express<br/>Backend API"]
+    api["Node.js + Express API"]
 
-    db["MongoDB<br/>Users • Projects • Presentations"]
+    db["MongoDB Database"]
 
-    groq["Groq AI API<br/>Content Generation"]
+    groq["Groq AI API"]
 
-    engine["AI Presentation<br/>Generation Engine"]
+    engine["Presentation Generation Engine"]
 
     slides["Slide Generator"]
 
     templates["Template Engine"]
 
-    content["Content Processor"]
+    analytics["Analytics Engine"]
 
-    output["Generated Output<br/>• PPT Slides<br/>• Templates<br/>• Content"]
+    output["Generated Presentation"]
 
     user --> ui
+
     ui --> api
 
     api --> db
+
     api --> groq
 
-    db --> engine
     groq --> engine
 
+    db --> engine
+
     engine --> slides
+
     engine --> templates
-    engine --> content
+
+    engine --> analytics
 
     slides --> output
+
     templates --> output
-    content --> output
+
+    analytics --> output
 ```
 
+---
 
-## 🚀 Quick Start
+# 🤖 AI Workflow
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or MongoDB Atlas)
-- Git
+```mermaid
+flowchart LR
 
-### Installation
+    A[User Topic]
+    B[Groq AI]
+    C[Content Generator]
+    D[Slide Structuring]
+    E[Template Engine]
+    F[PPTX Export]
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/styleby-shahid.git
-   cd styleby-shahid
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Install root dependencies
-   npm install
-   
-   # Install backend dependencies
-   cd backend
-   npm install
-   cd ..
-   ```
-
-3. **Environment Setup**
-   ```bash
-   # Create environment file in backend directory
-   cd backend
-   cp .env.example .env
-   ```
-   
-   Edit the `.env` file with your configuration:
-   ```env
-   PORT=5000
-   MONGODB_URI=your_mongodb_uri
-   JWT_SECRET=your-super-secret-jwt-key-here
-   NODE_ENV=development
-   ```
-
-4. **Start the application**
-   ```bash
-   # Start backend server
-   cd backend
-   npm start
-   
-   # In another terminal, serve the frontend
-   # You can use any HTTP server, for example:
-   npx http-server -p 8080
-   ```
-
-5. **Open your browser**
-   - Frontend: `http://localhost:8080`
-   - Backend API: `http://localhost:5000/api`
-   
-
-## 📁 Project Structure
-
-```
-stylesby-shahid/
-├── backend/                 # Backend server files
-│   ├── models/             # MongoDB models
-│   │   ├── User.js         # User model
-│   │   ├── Presentation.js # Presentation model
-│   │   └── Template.js     # Template model
-│   ├── routes/             # API routes
-│   │   ├── auth.js         # Authentication routes
-│   │   ├── presentations.js# Presentation routes
-│   │   ├── templates.js    # Template routes
-│   │   ├── collaboration.js# Real-time collaboration
-│   │   └── users.js        # User management
-│   ├── middleware/         # Custom middleware
-│   │   ├── auth.js         # JWT authentication
-│   │   └── errorHandler.js # Error handling
-│   ├── server.js           # Main server file
-│   ├── package.json        # Backend dependencies
-│   └── .env               # Environment variables
-├── index.html              # Main frontend file
-├── package.json            # Root package.json
-├── .gitignore             # Git ignore rules
-└── README.md              # This file
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
 ```
 
-## 🎯 API Endpoints
+# 🏆 Agents League Hackathon Submission
 
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user
+## Challenge Track
 
-### Templates
-- `GET /api/templates` - Get all templates
-- `GET /api/templates/featured` - Get featured templates
-- `POST /api/templates` - Create new template (admin)
+🎨 Creative Apps
 
-### Presentations
-- `GET /api/presentations` - Get user presentations
-- `POST /api/presentations` - Create new presentation
-- `GET /api/presentations/:id` - Get specific presentation
-- `PUT /api/presentations/:id` - Update presentation
-- `DELETE /api/presentations/:id` - Delete presentation
+## Why This Project?
 
-## 🎨 Theme Customization
+Presentation creation is one of the most common productivity tasks worldwide.
 
-The platform uses CSS variables for easy theme customization. You can modify the color scheme by updating the CSS variables in `index.html`:
+StylesByShahid demonstrates how AI can reduce friction between ideas and presentation-ready content by automating content generation, structuring, and export workflows.
 
-```css
-:root {
-  --primary-color: #4a6cf7;
-  --secondary-color: #ff6b6b;
-  --success-color: #51cf66;
-  --warning-color: #ffd43b;
-  --error-color: #ff6b6b;
-  /* ... more variables */
-}
+---
+
+# 🛠 Technology Stack
+
+## Frontend
+
+* HTML5
+* CSS3
+* JavaScript
+
+## Backend
+
+* Node.js
+* Express.js
+
+## Database
+
+* MongoDB
+* Mongoose
+
+## AI
+
+* Groq API
+
+## Authentication
+
+* JWT
+
+## Security
+
+* Helmet
+* bcrypt
+* Joi Validation
+* CORS
+
+---
+
+## Architecture Diagram
+
+Included in this repository.
+
+---
+
+# 📁 Project Structure
+
+```text
+stylesbyshahid/
+├── backend/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   ├── server.js
+│   └── package.json
+│
+├── api/
+│
+├── index.html
+├── package.json
+├── Dockerfile
+├── README.md
+└── LICENSE
 ```
 
-## 🔒 Security Features
+---
 
-- **JWT Authentication** - Secure token-based authentication
-- **Password Hashing** - bcrypt for secure password storage
-- **CORS Protection** - Configured for secure cross-origin requests
-- **Input Validation** - Joi validation for all API inputs
-- **Rate Limiting** - Protection against API abuse
-- **Helmet** - Security headers for enhanced protection
+# 🚀 Quick Start
 
-## 🤝 Contributing
+## Prerequisites
 
-We welcome contributions! Please follow these steps:
+* Node.js 14+
+* MongoDB
+* Git
+
+## Installation
+
+```bash
+git clone https://github.com/SHAHID-glitch/StylesByShahid.git
+
+cd StylesByShahid
+
+npm install
+
+cd backend
+
+npm install
+```
+
+## Environment Variables
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=your_secret
+NODE_ENV=development
+GROQ_API_KEY=your_groq_api_key
+```
+
+## Run Application
+
+```bash
+cd backend
+
+npm start
+```
+
+Open:
+
+Frontend:
+http://localhost:8080
+
+Backend:
+http://localhost:5000/api
+
+---
+
+# 🔮 Future Roadmap
+
+Upcoming features:
+
+* AI Website Generation
+* Presentation DNA™ Scoring
+* Speaker Notes Generation
+* AI Presenter Mode
+* Judge Mode
+* Multi-Agent Workflow
+* Microsoft Foundry IQ Integration
+* Citation-Based Research Generation
+
+---
+
+# 🤝 Contributing
+
+Contributions are welcome.
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create a feature branch
+3. Commit your changes
+4. Push to GitHub
 5. Open a Pull Request
 
-## 📝 License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+# 📝 License
 
-## 🙏 Acknowledgments
+MIT License
 
-- Font Awesome for icons
-- Inter font family for typography
-- MongoDB for database solutions
-- Express.js for the backend framework
-- Socket.io for real-time features
+---
 
-## 📞 Support
+# 👨‍💻 About the Engineeer
 
-If you have any questions or need help, please:
-- Open an issue on GitHub
-- Contact us at sahidmalik9368@gmail.com
+Hi, I'm Shahid Malik — a Full-Stack Developer and BCA student passionate about building AI-powered applications, modern web platforms, and cloud-based solutions.
+
+My work focuses on combining Artificial Intelligence, Web Development, Cloud Technologies, and User Experience Design to create impactful products that solve real-world problems. I enjoy transforming complex ideas into intuitive and accessible applications that people can use effortlessly.
+
+StylesByShahid was created to simplify presentation creation by leveraging AI to generate professional-quality content, structure slides, and streamline the presentation workflow. The goal is to help students, educators, creators, and professionals spend less time designing presentations and more time sharing ideas.
+
+Core Areas of Focus:
+
+* 🤖 Artificial Intelligence & Generative AI
+* 🌐 Full-Stack Web Development
+* ☁️ Cloud Computing & Azure Technologies
+* 📊 Data Science & Analytics
+* 🎨 UI/UX Design & User Experience
+* 🔧 API Development & Integration
+* 📱 Responsive Web Applications
+*  🚀 Product Development & Innovation
+
+# 👤 Project About
+
+Author: Shahid Malik
+
+GitHub Prrofile: https://github.com/SHAHID-glitch
+
+Microsoft Learn Profile: SHAHIDMALIK-4825
+
+Project: StylesByShahid
+
+Challenge Track: 🎨 Creative Apps
+
+Event: Microsoft Agents League Hackathon 2026
+
+Built With: JavaScript, Node.js, Express.js, MongoDB, Groq API, HTML, CSS
+---
 
 <div align="center">
-  <strong>Made with ❤️ by StylesByShahid</strong>
-  <br>
-  <sub>Building the future of presentations</sub>
+
+### Built for Microsoft Agents League 2026
+
+**AI-Powered Presentation Creation Platform**
+
+Made with ❤️ by Shahid Malik
+
 </div>
